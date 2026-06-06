@@ -4,6 +4,7 @@ export type Profile = {
   sex?: string;
   phone?: string;
   occupation?: string;
+  personType?: "Moral" | "Fisica" | "Fisica con actividad empresarial" | string;
 };
 
 export type Investment = {
@@ -89,6 +90,7 @@ export type Paperwork = {
   cost: number;
   days: number;
   required: boolean;
+  basis?: string;
 };
 
 export type Analysis = {
@@ -97,8 +99,10 @@ export type Analysis = {
   heatmap: HeatZone[];
   priceMap: PricePoint[];
   rentEstimate: { min: number; max: number; currency: string };
+  jurisdiction?: { entity: string; authority: string; system: string };
   competition: { percent: number; source: string };
   governmentSupports: string[];
+  regulatoryReferences?: Array<{ name: string; scope: string; articles?: string }>;
   paperwork: Paperwork[];
   paperworkTotalCost: number;
   paperworkTotalDays: number;
@@ -127,4 +131,3 @@ export type Risk = {
   narrative?: string;
   mitigations?: string[];
 };
-

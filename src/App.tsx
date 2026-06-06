@@ -32,6 +32,8 @@ import {
   localIdeaFill,
   localMissingFields,
   localRisk,
+  missingForStep,
+  personTypes,
   occupations
 } from "./lib/options";
 import type { Analysis, AuthState, BusinessLineOption, Municipality, ProcessState, Risk, WizardData } from "./types";
@@ -53,9 +55,9 @@ const steps: StepItem[] = [
 
 const initialProcess: ProcessState = {
   currentStep: 1,
-  data: {},
-  missingFields: localMissingFields({}),
-  completion: 0
+  data: { location: { stateCode: "09", stateName: "Ciudad de Mexico" } },
+  missingFields: localMissingFields({ location: { stateCode: "09", stateName: "Ciudad de Mexico" } }),
+  completion: localCompletion({ location: { stateCode: "09", stateName: "Ciudad de Mexico" } })
 };
 
 function deepMerge<T extends Record<string, unknown>>(base: T, patch: Partial<T>): T {
@@ -149,6 +151,25 @@ export default function App() {
     setProcess((current) => ({ ...current, currentStep: step }));
   }
 
+  function requestStep(step: number) {
+    if (step <= process.currentStep) {
+      setStep(step);
+      return;
+    }
+    const blockedStep = Array.from({ length: step - process.currentStep }, (_, index) => process.currentStep + index).find(
+      (candidate) => missingForStep(data, candidate).length > 0
+    );
+    if (blockedStep) {
+      setStatus("Completa los campos obligatorios");
+      return;
+    }
+    setStep(step);
+  }
+
+  function nextStep() {
+    requestStep(Math.min(6, process.currentStep + 1));
+  }
+
   async function syncProcess(target = process) {
     if (!auth) {
       setStatus("Invitado: sin guardado permanente");
@@ -181,11 +202,11 @@ export default function App() {
       const payload = await api.autofillIdea(ideaText.trim());
       updateData(payload.data);
       setStatus("Autollenado con IA");
-      setStep(2);
+      requestStep(2);
     } catch {
       updateData(localIdeaFill(ideaText.trim()));
       setStatus("Autollenado local");
-      setStep(2);
+      requestStep(2);
     } finally {
       setBusy(false);
     }
@@ -252,15 +273,16 @@ export default function App() {
     return municipalities.find((item) => item.code === data.location?.municipalityCode)?.name ?? data.location?.municipalityName;
   }, [municipalities, data.location?.municipalityCode, data.location?.municipalityName]);
 
-  const nextDisabled = process.currentStep === 6;
+  const currentStepMissing = missingForStep(data, process.currentStep);
+  const nextDisabled = process.currentStep === 6 || currentStepMissing.length > 0;
   const prevDisabled = process.currentStep === 1;
 
   return (
     <div className="appShell">
       <header className="topbar">
         <div>
-          <p>Registro y verificacion</p>
-          <h1>Viabilidad de negocio</h1>
+          <p>Gobierno de la Ciudad de Mexico</p>
+          <h1>Registro de viabilidad mercantil</h1>
         </div>
         <div className="statusPill">
           {saving ? <Loader2 className="spin" size={16} /> : <CheckCircle2 size={16} />}
@@ -269,7 +291,7 @@ export default function App() {
       </header>
 
       <div className="workspace">
-        <Stepper steps={steps} currentStep={process.currentStep} completion={process.completion} onStep={setStep} />
+        <Stepper steps={steps} currentStep={process.currentStep} completion={process.completion} onStep={requestStep} />
 
         <main className="mainPanel">
           {process.currentStep === 1 ? (
@@ -279,7 +301,7 @@ export default function App() {
                   <span>Paso 1</span>
                   <h2>Idea inicial</h2>
                 </div>
-                <button className="iconButton primary" type="button" onClick={() => setStep(2)} title="Iniciar proceso">
+                <button className="iconButton primary" type="button" onClick={() => requestStep(2)} title="Iniciar proceso">
                   <Play size={18} />
                   <span>Iniciar proceso</span>
                 </button>
@@ -290,7 +312,7 @@ export default function App() {
                   <textarea
                     value={ideaText}
                     onChange={(event) => setIdeaText(event.target.value)}
-                    placeholder="Cafeteria en Guadalajara con $250,000"
+                    placeholder="Cafeteria en Benito Juarez, CDMX, con $250,000"
                   />
                 </label>
                 <button className="actionTile" type="button" onClick={handleIdeaFill} disabled={busy || !ideaText.trim()}>
@@ -393,6 +415,16 @@ export default function App() {
                 <Field label="A que se dedica" path="profile.occupation" missingFields={process.missingFields}>
                   <input list="occupations" value={data.profile?.occupation ?? ""} onChange={(event) => updateData({ profile: { occupation: event.target.value } })} />
                 </Field>
+                <Field label="Tipo de persona" path="profile.personType" missingFields={process.missingFields}>
+                  <select value={data.profile?.personType ?? ""} onChange={(event) => updateData({ profile: { personType: event.target.value } })}>
+                    <option value="">Seleccionar</option>
+                    {personTypes.map((personType) => (
+                      <option key={personType} value={personType}>
+                        {personType}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
                 <datalist id="occupations">
                   {occupations.map((occupation) => (
                     <option key={occupation} value={occupation} />
@@ -433,28 +465,15 @@ export default function App() {
               </div>
 
               <div className="formGrid two">
-                <Field label="Estado" path="location.stateCode" missingFields={process.missingFields}>
-                  <select
-                    value={data.location?.stateCode ?? ""}
-                    onChange={(event) => {
-                      const state = states.find((item) => item.code === event.target.value);
-                      updateData({ location: { stateCode: event.target.value, stateName: state?.name, municipalityCode: "", municipalityName: "" } });
-                    }}
-                  >
-                    <option value="">Seleccionar</option>
-                    {states.map((state) => (
-                      <option key={state.code} value={state.code}>
-                        {state.name}
-                      </option>
-                    ))}
-                  </select>
+                <Field label="Entidad federativa" path="location.stateCode" missingFields={process.missingFields}>
+                  <input value="Ciudad de Mexico" readOnly />
                 </Field>
-                <Field label="Municipio o alcaldia" path="location.municipalityCode" missingFields={process.missingFields}>
+                <Field label="Alcaldia" path="location.municipalityCode" missingFields={process.missingFields}>
                   <select
                     value={data.location?.municipalityCode ?? ""}
                     onChange={(event) => {
                       const municipality = municipalities.find((item) => item.code === event.target.value);
-                      updateData({ location: { municipalityCode: event.target.value, municipalityName: municipality?.name } });
+                      updateData({ location: { stateCode: "09", stateName: "Ciudad de Mexico", municipalityCode: event.target.value, municipalityName: municipality?.name } });
                     }}
                   >
                     <option value="">Seleccionar</option>
@@ -556,6 +575,7 @@ export default function App() {
                           <th>Autoridad</th>
                           <th>Costo</th>
                           <th>Dias</th>
+                          <th>Fundamento</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -565,11 +585,23 @@ export default function App() {
                             <td>{item.authority}</td>
                             <td>{money.format(item.cost)}</td>
                             <td>{item.days}</td>
+                            <td>{item.basis ?? "Reglas CDMX aplicables"}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  {analysis.regulatoryReferences?.length ? (
+                    <div className="referencesGrid">
+                      {analysis.regulatoryReferences.map((item) => (
+                        <article key={item.name}>
+                          <strong>{item.name}</strong>
+                          {item.articles ? <em>{item.articles}</em> : null}
+                          <span>{item.scope}</span>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="alternatives">
                     {analysis.alternatives.map((item) => (
                       <article key={item.name}>
@@ -642,7 +674,7 @@ export default function App() {
               <ArrowLeft size={18} />
               <span>Atras</span>
             </button>
-            <button className="iconButton primary" disabled={nextDisabled} onClick={() => setStep(Math.min(6, process.currentStep + 1))} type="button">
+            <button className="iconButton primary" disabled={nextDisabled} onClick={nextStep} type="button">
               <span>Siguiente</span>
               <ArrowRight size={18} />
             </button>

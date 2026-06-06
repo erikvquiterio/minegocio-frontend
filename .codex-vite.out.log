@@ -3,10 +3,10 @@
 > vite --host 127.0.0.1 --port 5173
 
 
-  [32m[1mVITE[22m v7.3.5[39m  [2mready in [0m[1m1200[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v7.3.5[39m  [2mready in [0m[1m1660[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
-[2m1:14:03 p.m.[22m [36m[1m[vite][22m[39m changed tsconfig file detected: C:/Users/admin/Documents/viabilidad de negocios/front/tsconfig.node.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
-[2m1:14:03 p.m.[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
-[2m1:14:04 p.m.[22m [36m[1m[vite][22m[39m server restarted.
-[2m1:14:42 p.m.[22m [36m[1m[vite][22m[39m changed tsconfig file detected: C:/Users/admin/Documents/viabilidad de negocios/front/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m3:55:19 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m3:58:07 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m3:58:07 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.tsx[22m
+[2m3:58:07 p.m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css[22m
